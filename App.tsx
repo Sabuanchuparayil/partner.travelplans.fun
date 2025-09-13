@@ -1,0 +1,61 @@
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { DataProvider } from './context/DataContext';
+import { ToastProvider } from './context/ToastContext';
+import { useAuth } from './hooks/useAuth';
+import LoginPage from './pages/Login';
+import DashboardPage from './pages/Dashboard';
+import ItineraryDetailPage from './pages/ItineraryDetail';
+import CustomersPage from './pages/CustomersPage';
+import UserManagementPage from './pages/UserManagementPage';
+import ItinerariesPage from './pages/ItinerariesPage';
+import CompliancePage from './pages/CompliancePage';
+import DocumentsPage from './pages/DocumentsPage';
+import BookingsPage from './pages/BookingsPage';
+import GenerateItineraryPage from './pages/GenerateItineraryPage';
+
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Navigate to="/" />} />
+      <Route path="/" element={<DashboardPage />} />
+      <Route path="/itinerary/:id" element={<ItineraryDetailPage />} />
+      <Route path="/customers" element={<CustomersPage />} />
+      <Route path="/users" element={<UserManagementPage />} />
+      <Route path="/itineraries" element={<ItinerariesPage />} />
+      <Route path="/compliance" element={<CompliancePage />} />
+      <Route path="/documents" element={<DocumentsPage />} />
+      <Route path="/bookings" element={<BookingsPage />} />
+      <Route path="/generate-itinerary" element={<GenerateItineraryPage />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <DataProvider>
+          <HashRouter>
+            <AppRoutes />
+          </HashRouter>
+        </DataProvider>
+      </ToastProvider>
+    </AuthProvider>
+  );
+}
+
+export default App;
