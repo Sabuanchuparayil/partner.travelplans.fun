@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
-import { UploadIcon } from '../shared/icons/Icons';
+import Modal from '../shared/Modal';
+import { UploadIcon, CheckCircleIcon, EyeIcon } from '../shared/icons/Icons';
 import { useData } from '../../hooks/useData';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-import { CustomerDocument } from '../../types';
+import { Customer, CustomerDocument, Itinerary } from '../../types';
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { customers, bookings, itineraries, addDocumentToCustomer, updateCustomer } = useData();
+  const { customers, bookings, itineraries, addDocumentToCustomer, updateCustomer, addBooking } = useData();
   const { addToast } = useToast();
   
   const customerData = customers.find(c => c.email === user?.email);
 
   const [dob, setDob] = useState(customerData?.dob || '');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [quickViewItinerary, setQuickViewItinerary] = useState<Itinerary | null>(null);
+
 
   useEffect(() => {
     if (customerData) {
@@ -54,6 +57,14 @@ const CustomerDashboard: React.FC = () => {
         addToast("Your details have been updated successfully.", 'success');
     }
   };
+  
+  const handleBookNow = (itinerary: Itinerary) => {
+     if (customerData) {
+        addBooking({ customerId: customerData.id, itineraryId: itinerary.id });
+        addToast(`Booking request for '${itinerary.title}' sent!`, 'success');
+        setQuickViewItinerary(null); // Close modal on booking
+    }
+  }
 
   if (!customerData) {
     return (
@@ -66,6 +77,61 @@ const CustomerDashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-gray-800">My Booking Portal</h1>
+
+      <div>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Explore Our Itineraries</h2>
+        <div className="relative">
+          <div className="flex overflow-x-auto space-x-6 pb-4">
+            {itineraries.map(itinerary => {
+              const existingBooking = customerBookings.find(b => b.itineraryId === itinerary.id);
+              const isCompleted = existingBooking?.status === 'Completed';
+
+              return (
+                <Card key={itinerary.id} className="!p-0 w-80 flex-shrink-0 flex flex-col overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+                  <div className="relative">
+                    <img src={itinerary.imageUrl} alt={itinerary.title} className="w-full h-40 object-cover" />
+                    {isCompleted && (
+                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center shadow-lg z-10">
+                        <CheckCircleIcon className="w-4 h-4 mr-1" />
+                        Completed
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h3 className="text-lg font-bold text-gray-900 truncate">{itinerary.title}</h3>
+                    <p className="text-sm text-gray-500">{itinerary.destination}</p>
+                    {itinerary.description && <p className="mt-2 text-sm text-gray-600 h-16 overflow-hidden">{itinerary.description}</p>}
+                    <div className="mt-4 flex justify-between items-center">
+                        <span className="text-lg font-bold text-primary">AED {itinerary.price.toLocaleString()}</span>
+                        <span className="text-sm text-gray-600">{itinerary.duration} days</span>
+                    </div>
+                    <div className="mt-auto pt-4 flex items-center gap-2">
+                      <Button 
+                        variant="secondary" 
+                        className="!py-2 !px-3"
+                        onClick={() => setQuickViewItinerary(itinerary)}
+                        title="Quick View"
+                      >
+                         <EyeIcon className="w-5 h-5"/>
+                      </Button>
+                      {existingBooking ? (
+                        <Button disabled className="w-full">Booked</Button>
+                      ) : (
+                        <Button 
+                          className="w-full"
+                          onClick={() => handleBookNow(itinerary)}
+                        >
+                          Book Now
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       <Card>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">My Bookings</h2>
@@ -112,8 +178,8 @@ const CustomerDashboard: React.FC = () => {
         )}
       </Card>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="lg:col-span-1">
           <Card>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Complete Your Booking Details</h2>
             <form onSubmit={handleDetailsSubmit} className="space-y-4">
@@ -142,7 +208,7 @@ const CustomerDashboard: React.FC = () => {
           </Card>
         </div>
 
-        <div>
+        <div className="lg:col-span-1">
           <Card>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload Documents</h2>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
@@ -174,6 +240,24 @@ const CustomerDashboard: React.FC = () => {
           </Card>
         </div>
       </div>
+
+       {quickViewItinerary && (
+        <Modal 
+            isOpen={!!quickViewItinerary} 
+            onClose={() => setQuickViewItinerary(null)} 
+            title={quickViewItinerary.title}
+        >
+          <div className="space-y-4">
+            <img src={quickViewItinerary.imageUrl} alt={quickViewItinerary.title} className="w-full h-56 object-cover rounded-lg" />
+            <p className="text-md text-gray-600">{quickViewItinerary.destination}</p>
+            <p className="text-sm text-gray-700">{quickViewItinerary.description}</p>
+            <div className="flex justify-between items-center pt-4 border-t">
+              <span className="text-2xl font-bold text-primary">AED {quickViewItinerary.price.toLocaleString()}</span>
+              <Button onClick={() => handleBookNow(quickViewItinerary)}>Book Now</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

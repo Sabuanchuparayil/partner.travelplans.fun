@@ -28,7 +28,6 @@ const Sidebar: React.FC = () => {
         { icon: <HomeIcon />, label: 'Dashboard', path: '/' },
         { icon: <UsersIcon />, label: 'Customers', path: '/customers' },
         { icon: <BriefcaseIcon />, label: 'Itineraries', path: '/itineraries' },
-        { icon: <SparklesIcon />, label: 'AI Itinerary Generator', path: '/generate-itinerary' },
         { icon: <DollarSignIcon />, label: 'Bookings', path: '/bookings' },
       ];
     }

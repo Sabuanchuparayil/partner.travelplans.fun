@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../../hooks/useData';
@@ -15,7 +14,7 @@ const AdminDashboard: React.FC = () => {
       <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100 text-primary">
@@ -38,17 +37,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
-        <Card>
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <DollarSignIcon />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">AED 4,600,000</p>
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* Itinerary Management */}
@@ -61,13 +49,14 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {itineraries.slice(0, 3).map(it => (
-            <Card key={it.id} className="overflow-hidden !p-0 flex flex-col">
-              <Link to={`/itinerary/${it.id}`} className="group block">
-                <img src={it.imageUrl} alt={it.title} className="w-full h-48 object-cover group-hover:opacity-80 transition-opacity"/>
-                <div className="p-4">
+            <Card key={it.id} className="overflow-hidden !p-0 flex flex-col h-full">
+              <Link to={`/itinerary/${it.id}`} className="group block h-full flex flex-col">
+                <img src={it.imageUrl} alt={it.title} className="w-full h-48 object-cover group-hover:opacity-80 transition-opacity flex-shrink-0"/>
+                <div className="p-4 flex flex-col flex-grow">
                   <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{it.title}</h3>
                   <p className="text-sm text-gray-500">{it.destination}</p>
-                  <div className="flex justify-between items-center mt-4">
+                  {it.description && <p className="mt-2 text-sm text-gray-600 flex-grow">{it.description}</p>}
+                  <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-100">
                     <span className="text-xl font-bold text-primary">AED {it.price.toLocaleString()}</span>
                     <span className="text-sm text-gray-600">{it.duration} days</span>
                   </div>
@@ -103,7 +92,6 @@ const AdminDashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {/* FIX: Use `user.roles` (an array) instead of `user.role`. Map over roles to display them. */}
                     <div className="flex flex-wrap gap-1">
                       {user.roles.map(role => (
                         <span key={role} className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">

@@ -37,9 +37,11 @@ const CustomersPage: React.FC = () => {
 
     return baseCustomers.map(customer => {
       const agent = users.find(u => u.id === customer.registeredByAgentId);
+      const rm = users.find(u => u.id === customer.assignedRmId);
       return {
         ...customer,
         agentName: agent ? agent.name : 'N/A',
+        rmName: rm ? rm.name : 'N/A',
       };
     });
   }, [customers, users, user]);
@@ -106,7 +108,7 @@ const CustomersPage: React.FC = () => {
       return;
     }
 
-    const headers = ["ID", "First Name", "Last Name", "Email", "Date of Birth", "Registration Date", "Booking Status", "Registered By Agent"];
+    const headers = ["ID", "First Name", "Last Name", "Email", "Date of Birth", "Registration Date", "Booking Status", "Assigned RM", "Registered By Agent"];
     
     // Sanitize data for CSV
     const escapeCSV = (field: string) => `"${String(field || '').replace(/"/g, '""')}"`;
@@ -122,6 +124,7 @@ const CustomersPage: React.FC = () => {
           escapeCSV(customer.dob),
           escapeCSV(customer.registrationDate),
           escapeCSV(customer.bookingStatus),
+          escapeCSV(customer.rmName),
           escapeCSV(customer.agentName)
         ];
         return row.join(',');
@@ -196,93 +199,79 @@ const CustomersPage: React.FC = () => {
                         <button
                             key={value}
                             onClick={() => setStatusFilter(value)}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                                 statusFilter === value
                                 ? 'bg-white text-primary shadow'
-                                : 'text-gray-600 hover:bg-white/70'
+                                : 'text-gray-600 hover:bg-white/60'
                             }`}
-                            aria-pressed={statusFilter === value}
                         >
                             {label}
                         </button>
                     ))}
                 </div>
                 <div className="flex items-center gap-2">
-                    <label htmlFor="start-date" className="text-sm font-medium text-gray-700">From:</label>
-                    <input type="date" id="start-date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
+                    <span className="text-gray-600">to</span>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
+                    <button onClick={handleClearDates} className="text-sm text-gray-600 hover:text-primary underline">Clear</button>
                 </div>
-                 <div className="flex items-center gap-2">
-                    <label htmlFor="end-date" className="text-sm font-medium text-gray-700">To:</label>
-                    <input type="date" id="end-date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
-                </div>
-                {(startDate || endDate) && (
-                    <button onClick={handleClearDates} className="text-sm text-red-600 hover:underline">Clear Dates</button>
-                )}
             </div>
           </div>
-
-          <div className="overflow-x-auto mt-4">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered By</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCustomers.map(customer => (
-                  <tr key={customer.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{customer.firstName} {customer.lastName}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[customer.bookingStatus]}`}>
-                        {customer.bookingStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.agentName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => handleViewDetails(customer)} 
-                        className="text-primary hover:text-primary-dark disabled:text-gray-400 disabled:cursor-not-allowed"
-                        disabled={!canManageCustomers}
-                        title={!canManageCustomers ? "Action not available for your role" : "View customer details"}
-                      >
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {filteredCustomers.length === 0 && (
-                    <tr>
-                        <td colSpan={5} className="text-center py-8 text-gray-500">
-                            No customers found. Try adjusting your filters.
-                        </td>
-                    </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        </Card>
+        
+        <Card>
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned RM</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered By</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredCustomers.length > 0 ? filteredCustomers.map(customer => (
+                            <tr key={customer.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{customer.firstName} {customer.lastName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.email}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[customer.bookingStatus]}`}>
+                                        {customer.bookingStatus}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.rmName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.agentName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    {canManageCustomers ? (
+                                        <button onClick={() => handleViewDetails(customer)} className="text-primary hover:underline">
+                                            View Details
+                                        </button>
+                                    ) : (
+                                        <span className="text-gray-400">N/A</span>
+                                    )}
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan={6} className="text-center py-8 text-gray-500">
+                                    No customers found. Try adjusting your search or filters.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </Card>
       </div>
 
       {selectedCustomer && (
-        <CustomerDetailModal 
-          customer={selectedCustomer} 
-          onClose={handleCloseModal} 
-        />
+        <CustomerDetailModal customer={selectedCustomer} onClose={handleCloseModal} />
       )}
 
-      {canManageCustomers && (
-        <CreateCustomerModal
-            isOpen={isCreateModalOpen}
-            onClose={() => setCreateModalOpen(false)}
-        />
-      )}
+      <CreateCustomerModal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} />
 
     </DashboardLayout>
   );

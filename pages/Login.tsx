@@ -55,5 +55,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-// FIX: Add default export to be consumable by App.tsx
 export default LoginPage;

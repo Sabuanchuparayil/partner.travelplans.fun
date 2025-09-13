@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { ToastProvider } from './context/ToastContext';
 import { useAuth } from './hooks/useAuth';
+import { UserRole } from './types';
 import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
 import ItineraryDetailPage from './pages/ItineraryDetail';
@@ -18,7 +19,7 @@ import GenerateItineraryPage from './pages/GenerateItineraryPage';
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -38,7 +39,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/compliance" element={<CompliancePage />} />
       <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/bookings" element={<BookingsPage />} />
-      <Route path="/generate-itinerary" element={<GenerateItineraryPage />} />
+      <Route 
+        path="/generate-itinerary" 
+        element={
+          user.roles.includes(UserRole.ADMIN) ? <GenerateItineraryPage /> : <Navigate to="/" />
+        } 
+      />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

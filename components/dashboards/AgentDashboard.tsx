@@ -135,24 +135,25 @@ const AgentDashboard: React.FC = () => {
                 <Card className="overflow-hidden h-full transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-1 flex flex-col">
                     <img src={it.imageUrl} alt={it.title} className="w-full h-48 object-cover"/>
                     <div className="p-4 flex flex-col flex-grow">
-                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{it.title}</h3>
-                    <p className="text-sm text-gray-500">{it.destination}</p>
-                    <div className="flex justify-between items-center mt-4">
-                        <span className="text-xl font-bold text-primary">AED {it.price.toLocaleString()}</span>
-                        <span className="text-sm text-gray-600">{it.duration} days</span>
-                    </div>
-                    <div className="mt-auto pt-4 border-t border-gray-100 mt-4 flex flex-wrap gap-2">
-                        { (Object.keys(it.bookingCounts) as BookingStatus[]).map(status => (
-                            it.bookingCounts[status] > 0 && (
-                                <span key={status} className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusBadgeColors[status]}`}>
-                                    {status}: {it.bookingCounts[status]}
-                                </span>
-                            )
-                        ))}
-                        { it.bookingCounts.Pending === 0 && it.bookingCounts.Confirmed === 0 && it.bookingCounts.Completed === 0 && (
-                            <span className="text-xs text-gray-400 italic">No bookings from your customers yet.</span>
-                        )}
-                    </div>
+                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{it.title}</h3>
+                        <p className="text-sm text-gray-500">{it.destination}</p>
+                        {it.description && <p className="mt-2 text-sm text-gray-600 flex-grow">{it.description}</p>}
+                        <div className="flex justify-between items-center mt-4">
+                            <span className="text-xl font-bold text-primary">AED {it.price.toLocaleString()}</span>
+                            <span className="text-sm text-gray-600">{it.duration} days</span>
+                        </div>
+                        <div className="mt-auto pt-4 border-t border-gray-100 mt-4 flex flex-wrap gap-2">
+                            { (Object.keys(it.bookingCounts) as BookingStatus[]).map(status => (
+                                it.bookingCounts[status] > 0 && (
+                                    <span key={status} className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusBadgeColors[status]}`}>
+                                        {status}: {it.bookingCounts[status]}
+                                    </span>
+                                )
+                            ))}
+                            { it.bookingCounts.Pending === 0 && it.bookingCounts.Confirmed === 0 && it.bookingCounts.Completed === 0 && (
+                                <span className="text-xs text-gray-400 italic">No bookings from your customers yet.</span>
+                            )}
+                        </div>
                     </div>
                 </Card>
                 </Link>
