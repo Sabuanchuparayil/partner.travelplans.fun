@@ -168,9 +168,46 @@ const AgentDashboard: React.FC = () => {
       </div>
 
       <Modal isOpen={showTerms} onClose={() => {}} title="Terms & General Agreement">
-        <div className="text-sm text-gray-600 space-y-4">
-          <p>Please read and accept our updated terms and conditions to continue.</p>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <div className="text-sm text-gray-600 space-y-4 max-h-96 overflow-y-auto pr-2">
+          <p className="font-semibold">Welcome to the Travelplans.fun Agent Portal. By accessing and using this portal, you agree to comply with and be bound by the following terms and conditions.</p>
+          
+          <div>
+            <h4 className="font-bold text-gray-800">1. Agent Responsibilities</h4>
+            <ul className="list-disc list-inside space-y-1 mt-1">
+              <li>You agree to provide accurate, current, and complete information for all customer registrations.</li>
+              <li>You are responsible for accurately representing our travel itineraries and services to customers without making unauthorized claims or promises.</li>
+              <li>You must handle all customer data with the utmost confidentiality and in compliance with data protection regulations.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-gray-800">2. Use of Portal and Materials</h4>
+            <ul className="list-disc list-inside space-y-1 mt-1">
+                <li>All itineraries, collateral, and materials provided within this portal are the intellectual property of Travelplans.fun.</li>
+                <li>Materials marked as "Pending Approval" are for internal review only and must not be distributed to customers.</li>
+                <li>You are granted a non-exclusive, non-transferable license to use approved materials for the sole purpose of promoting and selling our travel packages.</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-bold text-gray-800">3. Booking and Payments</h4>
+             <ul className="list-disc list-inside space-y-1 mt-1">
+                <li>All bookings must be processed through the official channels provided in this portal.</li>
+                <li>You are responsible for informing customers about payment deadlines and ensuring timely collection of payments. Commission structures and payouts will be handled as per your individual agent contract.</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-bold text-gray-800">4. Confidentiality</h4>
+            <p>You acknowledge that you will have access to confidential information, including customer lists, pricing, and business strategies. You agree not to disclose this information to any third party, both during and after your association with Travelplans.fun.</p>
+          </div>
+          
+           <div>
+            <h4 className="font-bold text-gray-800">5. Termination</h4>
+            <p>Travelplans.fun reserves the right to suspend or terminate your access to the portal at any time for violations of these terms, unethical conduct, or fraudulent activities. You may terminate your access by providing written notice to the administration.</p>
+          </div>
+
+          <p className="font-semibold pt-2 border-t">By clicking "I Accept", you acknowledge that you have read, understood, and agree to be bound by these terms.</p>
         </div>
         <div className="mt-6 flex justify-end">
           <Button onClick={handleAcceptTerms}>I Accept</Button>

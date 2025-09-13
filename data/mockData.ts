@@ -89,6 +89,44 @@ export const mockItineraries: Itinerary[] = [
       { id: 'col-4-2', name: 'Cultural Events Schedule', type: CollateralType.PDF, url: '#', approved: false },
     ],
   },
+  {
+    id: 'iti-5',
+    title: 'Swiss Alps Adventure',
+    destination: 'Interlaken, Switzerland',
+    duration: 7,
+    price: 7500,
+    description: 'Embark on a breathtaking journey through the Swiss Alps. Experience thrilling mountain excursions, scenic train rides, and charming alpine villages.',
+    assignedAgentId: 'user-agent-2',
+    imageUrl: 'https://images.unsplash.com/photo-1534417332393-2a5c3cf4c281?q=80&w=2070&auto=format&fit=crop',
+    collaterals: [
+      { id: 'col-5-1', name: 'Jungfrau Region Guide', type: CollateralType.PDF, url: '#', approved: true },
+      { id: 'col-5-2', name: 'Train Schedule', type: CollateralType.DOCX, url: '#', approved: true },
+    ],
+  },
+  {
+    id: 'iti-6',
+    title: 'Japanese Cultural Journey',
+    destination: 'Tokyo & Kyoto, Japan',
+    duration: 10,
+    price: 9200,
+    description: 'Explore the best of Japan, from the bustling metropolis of Tokyo to the serene temples of Kyoto. A perfect blend of ancient tradition and futuristic innovation.',
+    assignedAgentId: 'user-agent-1',
+    imageUrl: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=2070&auto=format&fit=crop',
+    collaterals: [
+      { id: 'col-6-1', name: 'Tokyo City Guide', type: CollateralType.PDF, url: '#', approved: false },
+      { id: 'col-6-2', name: 'Kyoto Temple Guide', type: CollateralType.PDF, url: '#', approved: true },
+    ],
+  },
+  {
+    id: 'iti-7',
+    title: 'Egyptian Pharaohs Tour',
+    destination: 'Cairo & Luxor, Egypt',
+    duration: 8,
+    price: 5600,
+    description: 'Step back in time to the land of the Pharaohs. Witness the majestic Pyramids of Giza, explore the Valley of the Kings, and cruise the legendary Nile River.',
+    imageUrl: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?q=80&w=2070&auto=format&fit=crop',
+    collaterals: [],
+  },
 ];
 
 // CUSTOMERS

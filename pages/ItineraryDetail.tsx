@@ -5,7 +5,7 @@ import { ItineraryCollateral, CollateralType } from '../types';
 import DashboardLayout from '../components/shared/DashboardLayout';
 import Card from '../components/shared/Card';
 import Button from '../components/shared/Button';
-import { DownloadIcon, PdfFileIcon, DocFileIcon, PptFileIcon, ImageIcon, VideoIcon, GenericFileIcon, UserCircleIcon } from '../components/shared/icons/Icons';
+import { DownloadIcon, PdfFileIcon, DocFileIcon, PptFileIcon, ImageIcon, VideoIcon, GenericFileIcon } from '../components/shared/icons/Icons';
 
 const ItineraryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -72,7 +72,13 @@ const ItineraryDetailPage: React.FC = () => {
           {/* Left Column */}
           <div className="lg:col-span-3">
             <Card className="!p-0 overflow-hidden">
-                <img src={itinerary.imageUrl} alt={itinerary.title} className="w-full h-80 object-cover" />
+                <div className="overflow-hidden">
+                  <img 
+                    src={itinerary.imageUrl} 
+                    alt={itinerary.title} 
+                    className="w-full h-64 sm:h-80 lg:h-96 object-cover transition-transform duration-500 ease-in-out hover:scale-110" 
+                  />
+                </div>
                 <div className="p-6">
                     <h1 className="text-4xl font-extrabold text-gray-900">{itinerary.title}</h1>
                     <p className="mt-2 text-lg text-gray-600">{itinerary.destination}</p>
