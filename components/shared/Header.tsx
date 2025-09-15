@@ -7,10 +7,10 @@ import { UserRole } from '../../types';
 
 // Define role-specific colors for better visual distinction
 const roleColors: Record<UserRole, string> = {
-  [UserRole.ADMIN]: 'bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900 focus:ring-red-500',
-  [UserRole.AGENT]: 'bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900 focus:ring-blue-500',
-  [UserRole.CUSTOMER]: 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 focus:ring-green-500',
-  [UserRole.RELATIONSHIP_MANAGER]: 'bg-purple-100 text-purple-800 hover:bg-purple-200 hover:text-purple-900 focus:ring-purple-500',
+  [UserRole.ADMIN]: 'bg-red-100 text-red-800 hover:bg-red-200 focus:ring-red-500',
+  [UserRole.AGENT]: 'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:ring-blue-500',
+  [UserRole.CUSTOMER]: 'bg-green-100 text-green-800 hover:bg-green-200 focus:ring-green-500',
+  [UserRole.RELATIONSHIP_MANAGER]: 'bg-orange-100 text-orange-800 hover:bg-orange-200 focus:ring-orange-500',
 };
 
 const Header: React.FC = () => {
@@ -19,6 +19,8 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
 
   if (!user) return null;
+
+  const isAdmin = user.roles.includes(UserRole.ADMIN);
 
   const handleRoleClick = (role: UserRole) => {
     navigate(`/users?role=${encodeURIComponent(role)}`);
@@ -46,10 +48,13 @@ const Header: React.FC = () => {
                           key={role} 
                           onClick={(e) => {
                             e.stopPropagation(); // Prevent modal from opening when clicking a role
-                            handleRoleClick(role);
+                            if (isAdmin) {
+                              handleRoleClick(role);
+                            }
                           }}
-                          className={`px-2 py-0.5 text-xs font-semibold rounded-full transition-colors focus:outline-none focus:ring-2 ${roleColors[role] || 'bg-gray-100 text-gray-800'}`}
-                          title={`Filter users by role: ${role}`}
+                          className={`px-2 py-0.5 text-xs font-semibold rounded-full transition-colors focus:outline-none focus:ring-2 ${roleColors[role] || 'bg-gray-100 text-gray-800'} disabled:opacity-70 disabled:cursor-not-allowed`}
+                          title={isAdmin ? `Filter users by role: ${role}` : role}
+                          disabled={!isAdmin}
                         >
                           {role}
                         </button>

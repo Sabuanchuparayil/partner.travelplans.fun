@@ -1,13 +1,19 @@
-
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import Chatbot from './Chatbot';
+import { useAuth } from '../../hooks/useAuth';
+import { UserRole } from '../../types';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const { user } = useAuth();
+
+  const showChatbot = user?.roles.includes(UserRole.AGENT) || user?.roles.includes(UserRole.CUSTOMER);
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
@@ -17,6 +23,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {children}
         </main>
       </div>
+      {showChatbot && <Chatbot />}
     </div>
   );
 };

@@ -19,6 +19,9 @@ const CustomersPage: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
+  const canManageCustomers = user?.roles.includes(UserRole.ADMIN) || user?.roles.includes(UserRole.AGENT);
+  const canViewDetails = canManageCustomers || user?.roles.includes(UserRole.RELATIONSHIP_MANAGER);
+
   const customersWithDetails = useMemo(() => {
     let baseCustomers: Customer[];
 
@@ -88,7 +91,7 @@ const CustomersPage: React.FC = () => {
   }, [searchQuery, statusFilter, startDate, endDate, customersWithDetails, bookings]);
 
   const handleViewDetails = (customer: Customer) => {
-    if (user?.roles.includes(UserRole.ADMIN) || user?.roles.includes(UserRole.AGENT)) {
+    if (canViewDetails) {
         setSelectedCustomer(customer);
     }
   };
@@ -156,8 +159,6 @@ const CustomersPage: React.FC = () => {
     { label: 'Confirmed', value: 'Confirmed' },
     { label: 'Completed', value: 'Completed' },
   ];
-  
-  const canManageCustomers = user?.roles.includes(UserRole.ADMIN) || user?.roles.includes(UserRole.AGENT);
 
   return (
     <DashboardLayout>
@@ -245,7 +246,7 @@ const CustomersPage: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.rmName}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.agentName}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    {canManageCustomers ? (
+                                    {canViewDetails ? (
                                         <button onClick={() => handleViewDetails(customer)} className="text-primary hover:underline">
                                             View Details
                                         </button>

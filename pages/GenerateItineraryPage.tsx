@@ -4,7 +4,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import DashboardLayout from '../components/shared/DashboardLayout';
 import Card from '../components/shared/Card';
 import Button from '../components/shared/Button';
-import { SparklesIcon } from '../components/shared/icons/Icons';
+import { SparklesIcon, RefreshIcon } from '../components/shared/icons/Icons';
 import { useData } from '../hooks/useData';
 import { useToast } from '../hooks/useToast';
 
@@ -30,6 +30,7 @@ const GenerateItineraryPage: React.FC = () => {
     const [budget, setBudget] = useState('Mid-range');
     
     const [isLoading, setIsLoading] = useState(false);
+    const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -80,6 +81,23 @@ const GenerateItineraryPage: React.FC = () => {
             setGeneratedPlan(plan);
             
             // 2. Generate Image
+            await handleRegenerateImage(true);
+
+        } catch (err) {
+            console.error("AI generation failed:", err);
+            setError("Failed to generate itinerary. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRegenerateImage = async (isInitialGeneration = false) => {
+        if (!destination) return;
+        if (!isInitialGeneration) setIsRegeneratingImage(true);
+        setError(null);
+
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const imageResponse = await ai.models.generateImages({
                 model: 'imagen-4.0-generate-001',
                 prompt: `A scenic, high-quality, vibrant photograph representing a travel destination: ${destination}. No text or people.`,
@@ -89,17 +107,18 @@ const GenerateItineraryPage: React.FC = () => {
                     aspectRatio: '16:9',
                 },
             });
-            
+
             if (imageResponse.generatedImages?.length > 0) {
                 const base64ImageBytes: string = imageResponse.generatedImages[0].image.imageBytes;
                 setGeneratedImage(`data:image/jpeg;base64,${base64ImageBytes}`);
+            } else {
+                throw new Error("AI failed to return an image.");
             }
-
         } catch (err) {
-            console.error("AI generation failed:", err);
-            setError("Failed to generate itinerary. Please try again.");
+            console.error("Image regeneration failed:", err);
+            setError("Failed to regenerate the image. Please try again.");
         } finally {
-            setIsLoading(false);
+            if (!isInitialGeneration) setIsRegeneratingImage(false);
         }
     };
 
@@ -123,7 +142,7 @@ const GenerateItineraryPage: React.FC = () => {
             <div className="space-y-6">
                 <h1 className="text-3xl font-bold text-gray-800">AI Itinerary Generator</h1>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 space-y-6">
                         <Card>
                             <form onSubmit={handleGenerate} className="space-y-4">
                                 <div>
@@ -152,17 +171,11 @@ const GenerateItineraryPage: React.FC = () => {
                                         <option>Luxury</option>
                                     </select>
                                 </div>
-                                <Button type="submit" disabled={isLoading} className="w-full inline-flex justify-center items-center gap-2">
+                                <Button type="submit" disabled={isLoading || isRegeneratingImage} className="w-full inline-flex justify-center items-center gap-2">
                                     {isLoading ? (
-                                        <>
-                                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                            Generating...
-                                        </>
+                                        <> <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating... </>
                                     ) : (
-                                        <>
-                                            <SparklesIcon className="w-5 h-5"/>
-                                            Generate Itinerary
-                                        </>
+                                        <> <SparklesIcon className="w-5 h-5"/> Generate Itinerary </>
                                     )}
                                 </Button>
                             </form>
@@ -178,16 +191,27 @@ const GenerateItineraryPage: React.FC = () => {
                                     <p className="mt-2 text-sm text-gray-500">This might take a moment. The AI is crafting the perfect trip!</p>
                                 </div>
                             )}
-                            {error && <p className="text-red-500">{error}</p>}
+                            {error && <p className="text-red-500 text-center my-4">{error}</p>}
                             {generatedPlan && (
                                 <div className="space-y-6">
                                     {generatedImage && <img src={generatedImage} alt={generatedPlan.title} className="w-full h-64 object-cover rounded-lg shadow-md" />}
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex justify-between items-start gap-4">
                                         <div>
                                             <h2 className="text-3xl font-bold text-gray-900">{generatedPlan.title}</h2>
                                             <p className="text-lg text-gray-600">for {destination}</p>
                                         </div>
-                                        <Button onClick={handleSave} variant="secondary">Save Itinerary</Button>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {generatedImage && (
+                                                <Button onClick={() => handleRegenerateImage()} disabled={isLoading || isRegeneratingImage} variant="secondary" className="inline-flex justify-center items-center gap-2 !py-2 !px-3" >
+                                                    {isRegeneratingImage ? (
+                                                        <> <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span className="hidden sm:inline">Regenerating...</span></>
+                                                    ) : (
+                                                        <> <RefreshIcon className="w-5 h-5"/> <span className="hidden sm:inline">Regenerate Image</span> </>
+                                                    )}
+                                                </Button>
+                                            )}
+                                            <Button onClick={handleSave}>Save Itinerary</Button>
+                                        </div>
                                     </div>
                                     <p className="text-gray-700">{generatedPlan.description}</p>
                                     <div className="border-t pt-4">

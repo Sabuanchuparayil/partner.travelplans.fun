@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { ToastProvider } from './context/ToastContext';
 import { useAuth } from './hooks/useAuth';
+import { useData } from './hooks/useData';
 import { UserRole } from './types';
 import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
@@ -17,7 +18,16 @@ import BookingsPage from './pages/BookingsPage';
 import GenerateItineraryPage from './pages/GenerateItineraryPage';
 
 const AppRoutes: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { loading: dataLoading } = useData();
+
+  if (authLoading || dataLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) {
     return (
@@ -34,7 +44,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={<DashboardPage />} />
       <Route path="/itinerary/:id" element={<ItineraryDetailPage />} />
       <Route path="/customers" element={<CustomersPage />} />
-      <Route path="/users" element={<UserManagementPage />} />
+      <Route 
+        path="/users" 
+        element={
+          user.roles.includes(UserRole.ADMIN) ? <UserManagementPage /> : <Navigate to="/" />
+        } 
+      />
       <Route path="/itineraries" element={<ItinerariesPage />} />
       <Route path="/compliance" element={<CompliancePage />} />
       <Route path="/documents" element={<DocumentsPage />} />

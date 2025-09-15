@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
 import Modal from '../shared/Modal';
-import { UploadIcon, CheckCircleIcon, EyeIcon } from '../shared/icons/Icons';
+import { UploadIcon, CheckCircleIcon, EyeIcon, SparklesIcon } from '../shared/icons/Icons';
 import { useData } from '../../hooks/useData';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-import { Customer, CustomerDocument, Itinerary } from '../../types';
+// FIX: Import RecommendedItinerary from the global types file.
+import { Customer, CustomerDocument, Itinerary, RecommendedItinerary } from '../../types';
+
+// FIX: Removed local definition of RecommendedItinerary as it's now in types.ts.
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { customers, bookings, itineraries, addDocumentToCustomer, updateCustomer, addBooking } = useData();
+  // FIX: Destructure getRecommendedItineraries from useData hook, which is now available.
+  const { customers, bookings, itineraries, addDocumentToCustomer, updateCustomer, addBooking, getRecommendedItineraries } = useData();
   const { addToast } = useToast();
   
   const customerData = customers.find(c => c.email === user?.email);
@@ -18,13 +22,19 @@ const CustomerDashboard: React.FC = () => {
   const [dob, setDob] = useState(customerData?.dob || '');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [quickViewItinerary, setQuickViewItinerary] = useState<Itinerary | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendedItinerary[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(true);
 
 
   useEffect(() => {
     if (customerData) {
       setDob(customerData.dob);
+      setLoadingRecs(true);
+      getRecommendedItineraries(customerData.id)
+        .then(setRecommendations)
+        .finally(() => setLoadingRecs(false));
     }
-  }, [customerData]);
+  }, [customerData, getRecommendedItineraries]);
 
   const customerBookings = customerData ? bookings.filter(b => b.customerId === customerData.id) : [];
 
@@ -77,6 +87,37 @@ const CustomerDashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-gray-800">My Booking Portal</h1>
+      
+      {loadingRecs ? (
+        <Card>
+          <div className="flex items-center justify-center space-x-2">
+            <SparklesIcon className="w-6 h-6 text-primary animate-pulse" />
+            <p className="text-gray-600">Finding personalized recommendations for you...</p>
+          </div>
+        </Card>
+      ) : recommendations.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Recommended For You</h2>
+             <div className="flex overflow-x-auto space-x-6 pb-4">
+                {recommendations.map(({ itinerary, reason }) => (
+                     <Card key={itinerary.id} className="!p-0 w-80 flex-shrink-0 flex flex-col overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+                        <img src={itinerary.imageUrl} alt={itinerary.title} className="w-full h-40 object-cover" />
+                        <div className="p-4 flex flex-col flex-grow">
+                            <h3 className="text-lg font-bold text-gray-900 truncate">{itinerary.title}</h3>
+                            <p className="text-sm text-gray-500">{itinerary.destination}</p>
+                            <div className="mt-2 p-2 bg-green-50 border-l-4 border-secondary rounded-r-lg">
+                                <p className="text-sm text-green-800 italic">"{reason}"</p>
+                            </div>
+                            <div className="mt-auto pt-4 flex items-center gap-2">
+                                <Button variant="secondary" className="!py-2 !px-3" onClick={() => setQuickViewItinerary(itinerary)} title="Quick View"><EyeIcon className="w-5 h-5"/></Button>
+                                <Button className="w-full" onClick={() => handleBookNow(itinerary)}>Book Now</Button>
+                            </div>
+                        </div>
+                    </Card>
+                ))}
+            </div>
+          </div>
+      )}
 
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Explore Our Itineraries</h2>

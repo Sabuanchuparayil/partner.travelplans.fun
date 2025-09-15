@@ -24,6 +24,12 @@ export interface Itinerary {
   imageUrl: string;
 }
 
+// FIX: Add RecommendedItinerary interface for AI recommendations.
+export interface RecommendedItinerary {
+    itinerary: Itinerary;
+    reason: string;
+}
+
 export enum CollateralType {
     PDF = 'PDF',
     DOCX = 'DOCX',
@@ -38,6 +44,10 @@ export interface ItineraryCollateral {
     type: CollateralType;
     url: string;
     approved: boolean;
+    aiFeedback?: {
+      issuesFound: boolean;
+      feedback: string;
+    };
 }
 
 export interface CustomerDocument {
@@ -46,6 +56,8 @@ export interface CustomerDocument {
     type: 'PDF' | 'DOCX' | 'JPG' | 'PNG';
     url: string;
     uploadDate: string;
+    verifiedStatus?: 'Verified' | 'Rejected' | 'Pending' | 'Error';
+    aiFeedback?: string;
 }
 
 export interface Customer {

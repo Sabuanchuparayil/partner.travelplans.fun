@@ -1,12 +1,12 @@
-
 import React, { createContext, useState, ReactNode } from 'react';
-import { User, UserRole } from '../types';
+import { User } from '../types';
 import { mockUsers } from '../data/mockData';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
-  login: (role: UserRole) => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -18,32 +18,32 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false); // No initial loading
 
-  const login = (role: UserRole) => {
-    // In a real app, this would involve an API call.
-    // Prioritize logging in a user who *only* has the selected role to avoid ambiguity.
-    let userToLogin = mockUsers.find(u => u.roles.length === 1 && u.roles[0] === role);
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
 
-    // If no single-role user is found, fall back to finding any user with that role.
-    if (!userToLogin) {
-      userToLogin = mockUsers.find(u => u.roles.includes(role));
-    }
+    const appUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
-    if (userToLogin) {
-      setUser(userToLogin);
+    // For demo purposes, all mock users use the same password
+    if (appUser && password === 'password123') {
+      setUser(appUser);
+      setLoading(false);
     } else {
-      console.error(`No mock user found for role: ${role}`);
+      setLoading(false);
+      throw new Error('Invalid email or password.');
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
   };
 
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

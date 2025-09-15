@@ -50,17 +50,17 @@ const Sidebar: React.FC = () => {
   const navLinks = getNavLinks();
 
   return (
-    <div className="hidden md:flex flex-col w-64 bg-sidebar text-white">
-      <div className="flex items-center justify-center h-20 border-b border-sidebar-accent">
-        <h1 className="text-2xl font-bold text-white">Travelplans.fun</h1>
+    <div className="hidden md:flex flex-col w-64 bg-sidebar text-gray-800 border-r border-gray-200">
+      <div className="flex items-center justify-center h-20 px-4 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-primary">Travelplans.fun</h1>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <nav className="mt-10">
+        <nav className="mt-6">
           {navLinks.map((link, index) => (
             <Link
               key={index}
               to={link.path}
-              className={`flex items-center mt-4 py-3 px-6 text-gray-300 hover:bg-sidebar-accent hover:text-white transition-colors ${location.pathname === link.path ? 'bg-sidebar-accent' : ''}`}
+              className={`flex items-center mt-2 py-3 px-6 text-gray-600 hover:bg-sidebar-accent hover:text-primary transition-colors rounded-lg mx-2 ${location.pathname === link.path ? 'bg-sidebar-accent text-primary font-semibold' : ''}`}
             >
               {link.icon}
               <span className="mx-3">{link.label}</span>

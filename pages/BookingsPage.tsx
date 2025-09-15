@@ -2,8 +2,10 @@ import React, { useMemo, useState } from 'react';
 import DashboardLayout from '../components/shared/DashboardLayout';
 import Card from '../components/shared/Card';
 import Modal from '../components/shared/Modal';
+import ConfirmationModal from '../components/shared/ConfirmationModal';
 import { useAuth } from '../hooks/useAuth';
 import { useData } from '../hooks/useData';
+import { useToast } from '../hooks/useToast';
 import { Booking, UserRole } from '../types';
 import { BriefcaseIcon, CalendarIcon, ListIcon } from '../components/shared/icons/Icons';
 
@@ -18,15 +20,24 @@ type DetailedBooking = Booking & {
     agentName: string;
 };
 
+interface BookingUpdateConfirmation {
+  bookingId: string;
+  newStatus: BookingStatus | PaymentStatus;
+  oldStatus: BookingStatus | PaymentStatus;
+  type: 'status' | 'paymentStatus';
+}
+
 const BookingsPage: React.FC = () => {
     const { user: currentUser } = useAuth();
     const { bookings, customers, itineraries, users, updateBooking } = useData();
+    const { addToast } = useToast();
 
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDayBookings, setSelectedDayBookings] = useState<DetailedBooking[] | null>(null);
     const [statusFilter, setStatusFilter] = useState<'All' | BookingStatus>('All');
     const [paymentStatusFilter, setPaymentStatusFilter] = useState<'All' | PaymentStatus>('All');
+    const [confirmationDetails, setConfirmationDetails] = useState<BookingUpdateConfirmation | null>(null);
 
     const allBookings = useMemo(() => {
         if (!currentUser) return [];
@@ -65,12 +76,40 @@ const BookingsPage: React.FC = () => {
         });
     }, [allBookings, statusFilter, paymentStatusFilter]);
 
-    const handleStatusChange = (bookingId: string, newStatus: BookingStatus) => {
-        updateBooking(bookingId, { status: newStatus });
+    const handleStatusChangeRequest = (bookingId: string, oldStatus: BookingStatus, newStatus: BookingStatus) => {
+        if (oldStatus !== newStatus) {
+            setConfirmationDetails({
+                bookingId,
+                newStatus,
+                oldStatus,
+                type: 'status',
+            });
+        }
     };
 
-    const handlePaymentStatusChange = (bookingId: string, newPaymentStatus: PaymentStatus) => {
-        updateBooking(bookingId, { paymentStatus: newPaymentStatus });
+    const handlePaymentStatusChangeRequest = (bookingId: string, oldStatus: PaymentStatus, newPaymentStatus: PaymentStatus) => {
+        if (oldStatus !== newPaymentStatus) {
+            setConfirmationDetails({
+                bookingId,
+                newStatus: newPaymentStatus,
+                oldStatus,
+                type: 'paymentStatus',
+            });
+        }
+    };
+
+    const handleConfirmStatusUpdate = () => {
+        if (!confirmationDetails) return;
+
+        const { bookingId, newStatus, oldStatus, type } = confirmationDetails;
+        if (type === 'status') {
+            updateBooking(bookingId, { status: newStatus as BookingStatus });
+        } else if (type === 'paymentStatus') {
+            updateBooking(bookingId, { paymentStatus: newStatus as PaymentStatus });
+        }
+        
+        addToast(`Booking updated from "${oldStatus}" to "${newStatus}".`, 'success');
+        setConfirmationDetails(null);
     };
 
     const bookingStatusOptions: BookingStatus[] = ['Pending', 'Confirmed', 'Completed'];
@@ -193,7 +232,7 @@ const BookingsPage: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 <select 
                                     value={booking.status} 
-                                    onChange={(e) => handleStatusChange(booking.id, e.target.value as BookingStatus)}
+                                    onChange={(e) => handleStatusChangeRequest(booking.id, booking.status, e.target.value as BookingStatus)}
                                     className={`w-full p-1.5 border rounded-md text-xs font-semibold focus:ring-primary focus:border-primary ${bookingStatusColors[booking.status]}`}
                                 >
                                     {bookingStatusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -202,7 +241,7 @@ const BookingsPage: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 <select 
                                     value={booking.paymentStatus} 
-                                    onChange={(e) => handlePaymentStatusChange(booking.id, e.target.value as PaymentStatus)}
+                                    onChange={(e) => handlePaymentStatusChangeRequest(booking.id, booking.paymentStatus, e.target.value as PaymentStatus)}
                                     className={`w-full p-1.5 border rounded-md text-xs font-semibold focus:ring-primary focus:border-primary ${paymentStatusColors[booking.paymentStatus]}`}
                                 >
                                     {paymentStatusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -271,6 +310,15 @@ const BookingsPage: React.FC = () => {
                         ))}
                     </div>
                 </Modal>
+            )}
+            {confirmationDetails && (
+                <ConfirmationModal
+                    isOpen={!!confirmationDetails}
+                    onClose={() => setConfirmationDetails(null)}
+                    onConfirm={handleConfirmStatusUpdate}
+                    title="Confirm Status Change"
+                    message={`Are you sure you want to change the ${confirmationDetails.type === 'status' ? 'booking' : 'payment'} status from "${confirmationDetails.oldStatus}" to "${confirmationDetails.newStatus}"?`}
+                />
             )}
         </DashboardLayout>
     );

@@ -10,7 +10,7 @@ const Button: React.FC<ButtonProps> = ({ children, className = '', variant = 'pr
   
   const variantClasses = {
     primary: 'bg-primary hover:bg-primary-dark focus:ring-primary-dark',
-    secondary: 'bg-secondary hover:bg-purple-700 focus:ring-purple-500'
+    secondary: 'bg-secondary hover:bg-green-600 focus:ring-green-500'
   };
 
   return (
