@@ -1,263 +1,274 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import { Itinerary, CollateralType, UserRole } from '../../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Itinerary, UserRole, ItineraryCollateral, CollateralType } from '../../types';
 import { useData } from '../../hooks/useData';
-import { useAuth } from '../../hooks/useAuth';
 import Button from '../shared/Button';
-import { ImageIcon, SparklesIcon } from '../shared/icons/Icons';
-import ConfirmationModal from '../shared/ConfirmationModal';
+import { ImageIcon, DeleteIcon, FilePlusIcon } from '../shared/icons/Icons';
+
+// Helper function to convert file to Base64 data URL
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
 
 interface ItineraryFormProps {
   onClose: () => void;
-  onSubmit: (itinerary: any) => void;
+  onSubmit: (itinerary: Omit<Itinerary, 'id'> | Itinerary) => void;
   itineraryToEdit?: Itinerary;
 }
 
 const ItineraryForm: React.FC<ItineraryFormProps> = ({ onClose, onSubmit, itineraryToEdit }) => {
-  const { users } = useData();
-  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
-  const [duration, setDuration] = useState('');
-  const [price, setPrice] = useState('');
+  const [duration, setDuration] = useState(7);
+  const [price, setPrice] = useState(1000);
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [assignedAgentId, setAssignedAgentId] = useState<string>('');
-  const [collaterals, setCollaterals] = useState<{ id?: string; name: string; type: CollateralType; url: string, approved: boolean }[]>([]);
-  const [imageError, setImageError] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [collateralToRemove, setCollateralToRemove] = useState<number | null>(null);
+  const [imageUrl, setImageUrl] = useState(''); // Stores data URL
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [assignedAgentId, setAssignedAgentId] = useState<string | undefined>(undefined);
+  const [collaterals, setCollaterals] = useState<ItineraryCollateral[]>([]);
 
-  const agents = users.filter(user => user.roles.includes(UserRole.AGENT));
-  const isAdmin = user?.roles.includes(UserRole.ADMIN);
+  const { users } = useData();
+  const agents = useMemo(() => users.filter(u => u.roles.includes(UserRole.AGENT)), [users]);
 
   useEffect(() => {
     if (itineraryToEdit) {
       setTitle(itineraryToEdit.title);
       setDestination(itineraryToEdit.destination);
-      setDuration(itineraryToEdit.duration.toString());
-      setPrice(itineraryToEdit.price.toString());
+      setDuration(itineraryToEdit.duration);
+      setPrice(itineraryToEdit.price);
       setDescription(itineraryToEdit.description || '');
-      setImageUrl(itineraryToEdit.imageUrl);
-      setAssignedAgentId(itineraryToEdit.assignedAgentId || '');
-      setCollaterals(itineraryToEdit.collaterals);
+      setImageUrl(itineraryToEdit.imageUrl || '');
+      setImagePreview(itineraryToEdit.imageUrl || null);
+      setAssignedAgentId(itineraryToEdit.assignedAgentId);
+      setCollaterals(itineraryToEdit.collaterals || []);
     } else {
+        // Reset form for creation
         setTitle('');
         setDestination('');
-        setDuration('');
-        setPrice('');
+        setDuration(7);
+        setPrice(1000);
         setDescription('');
         setImageUrl('');
-        setAssignedAgentId('');
+        setImagePreview(null);
+        setAssignedAgentId(undefined);
         setCollaterals([]);
     }
-    setImageError(false);
-    setIsGenerating(false);
   }, [itineraryToEdit]);
 
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const dataUrl = await toBase64(file);
+      setImageUrl(dataUrl);
+      setImagePreview(dataUrl);
+    }
+  };
 
-  const handleCollateralChange = (index: number, field: string, value: string | boolean) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        const dataUrl = await toBase64(file);
+        setImageUrl(dataUrl);
+        setImagePreview(dataUrl);
+      }
+    }
+  };
+  
+  const handleRemoveImage = () => {
+    setImageUrl('');
+    setImagePreview(null);
+    const input = document.getElementById('image-upload') as HTMLInputElement;
+    if (input) input.value = '';
+  };
+
+  const handleAddCollateral = () => {
+    setCollaterals([
+        ...collaterals, 
+        { 
+            id: `new-${Date.now()}`, 
+            name: '', 
+            type: CollateralType.PDF, 
+            url: '', 
+            approved: false 
+        }
+    ]);
+  };
+
+  const handleRemoveCollateral = (index: number) => {
+    setCollaterals(collaterals.filter((_, i) => i !== index));
+  };
+  
+  const handleCollateralChange = (index: number, field: keyof ItineraryCollateral, value: string | CollateralType) => {
     const newCollaterals = [...collaterals];
+    // Using 'any' for type flexibility, but it's safe within this controlled component
     (newCollaterals[index] as any)[field] = value;
     setCollaterals(newCollaterals);
   };
 
-  const addCollateral = () => {
-    setCollaterals([...collaterals, { name: '', type: CollateralType.PDF, url: '', approved: !!isAdmin }]);
-  };
-
-  const removeCollateral = (index: number) => {
-    setCollaterals(collaterals.filter((_, i) => i !== index));
-  };
-  
-  const handleRemoveCollateralConfirm = () => {
-    if (collateralToRemove !== null) {
-        removeCollateral(collateralToRemove);
-        setCollateralToRemove(null);
+  const handleCollateralFileChange = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const dataUrl = await toBase64(file);
+      const newCollaterals = [...collaterals];
+      newCollaterals[index] = { 
+          ...newCollaterals[index], 
+          url: dataUrl, 
+          name: newCollaterals[index].name || file.name 
+      };
+      setCollaterals(newCollaterals);
     }
   };
 
-  const handleGenerateImage = async () => {
-    if (!destination.trim()) {
-        alert("Please enter a destination name to generate an image.");
-        return;
-    }
-
-    setIsGenerating(true);
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: `A scenic, high-quality, vibrant photograph representing a travel destination: ${destination}. No text or people.`,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '16:9',
-            },
-        });
-
-        if (response.generatedImages && response.generatedImages.length > 0) {
-            const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-            const dataUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
-            setImageUrl(dataUrl);
-            setImageError(false);
-        } else {
-            throw new Error("Image generation returned no images.");
-        }
-    } catch (error) {
-        console.error("Image generation failed:", error);
-        alert("Sorry, we couldn't generate an image for that destination. Please try a different one or provide a URL manually.");
-    } finally {
-        setIsGenerating(false);
-    }
-  };
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const itineraryData = {
-      ...itineraryToEdit,
+      ...(itineraryToEdit || {}),
+      id: itineraryToEdit?.id,
       title,
       destination,
-      duration: Number(duration),
-      price: Number(price),
+      duration,
+      price,
       description,
-      imageUrl: imageUrl,
-      assignedAgentId: assignedAgentId,
-      collaterals: collaterals.map(c => ({...c, id: c.id || `col-${Date.now()}-${Math.random()}` })),
+      imageUrl,
+      assignedAgentId,
+      collaterals,
     };
     onSubmit(itineraryData);
   };
 
   return (
-    <>
-        <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
-            <input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-        </div>
-        <div>
-            <label htmlFor="destination" className="block text-sm font-medium text-gray-700">Destination</label>
-            <input type="text" id="destination" value={destination} onChange={e => setDestination(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-        </div>
-        <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">Image URL</label>
-            <input 
-                type="text" 
-                id="imageUrl" 
-                value={imageUrl} 
-                onChange={e => {
-                    setImageUrl(e.target.value);
-                    setImageError(false);
-                }} 
-                placeholder="https:// or data:image/..."
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-            />
-        </div>
-        
-        <div className="p-2 border border-dashed border-gray-300 rounded-md min-h-[150px] flex items-center justify-center bg-gray-50">
-            {imageUrl && !imageError ? (
-            <img 
-                src={imageUrl} 
-                alt="Itinerary preview" 
-                className="max-h-40 w-auto rounded object-cover"
-                onError={() => setImageError(true)}
-            />
-            ) : imageError ? (
-            <div className="text-center text-red-500">
-                <ImageIcon className="mx-auto h-12 w-12 text-gray-400"/>
-                <p className="text-sm mt-2">Could not load image. Please check the URL.</p>
-            </div>
-            ) : (
-            <div className="text-center text-gray-500">
-                <ImageIcon className="mx-auto h-12 w-12 text-gray-400"/>
-                <p className="text-sm mt-2">Enter an image URL or generate one.</p>
-                <Button 
-                    type="button" 
-                    variant="secondary" 
-                    onClick={handleGenerateImage}
-                    disabled={!destination || isGenerating}
-                    className="text-sm !py-1.5 !px-3 mt-2 inline-flex items-center gap-2"
-                >
-                    {isGenerating ? (
-                        <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Generating...
-                        </>
-                    ) : (
-                        <>
-                            <SparklesIcon className="w-4 h-4" />
-                            Generate with AI
-                        </>
-                    )}
-                </Button>
-                <p className="text-xs mt-2">A destination name is required to generate an image.</p>
-            </div>
-            )}
-        </div>
-
-        <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={4} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-            <div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+        <input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+      </div>
+      <div>
+        <label htmlFor="destination" className="block text-sm font-medium text-gray-700">Destination</label>
+        <input type="text" id="destination" value={destination} onChange={e => setDestination(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+      </div>
+       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+         <div>
             <label htmlFor="duration" className="block text-sm font-medium text-gray-700">Duration (days)</label>
-            <input type="number" id="duration" value={duration} onChange={e => setDuration(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-            </div>
-            <div>
+            <input type="number" id="duration" value={duration} onChange={e => setDuration(Number(e.target.value))} required min="1" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+        </div>
+        <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price (AED)</label>
-            <input type="number" id="price" value={price} onChange={e => setPrice(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-            </div>
+            <input type="number" id="price" value={price} onChange={e => setPrice(Number(e.target.value))} required min="0" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
         </div>
-        
-        <div>
-            <label htmlFor="agent" className="block text-sm font-medium text-gray-700">Assign Agent</label>
-            <select id="agent" value={assignedAgentId} onChange={e => setAssignedAgentId(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                <option value="">Unassigned</option>
-                {agents.map(agent => (
-                    <option key={agent.id} value={agent.id}>{agent.name}</option>
-                ))}
-            </select>
-        </div>
+      </div>
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+        <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={4} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+      </div>
 
-        <div>
-            <h3 className="text-md font-medium text-gray-800 mb-2">Collaterals</h3>
-            {collaterals.map((collateral, index) => (
-            <div key={index} className="grid grid-cols-12 gap-2 mb-2 p-2 border rounded-md items-center">
-                <input type="text" placeholder="Name" value={collateral.name} onChange={e => handleCollateralChange(index, 'name', e.target.value)} required className="col-span-4 block w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
-                <select value={collateral.type} onChange={e => handleCollateralChange(index, 'type', e.target.value)} className="col-span-3 block w-full pl-2 pr-7 py-1 border border-gray-300 rounded-md shadow-sm sm:text-sm">
-                    {Object.values(CollateralType).map(type => <option key={type} value={type}>{type}</option>)}
-                </select>
-                <input type="url" placeholder="https://..." value={collateral.url} onChange={e => handleCollateralChange(index, 'url', e.target.value)} required className="col-span-3 block w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
-                <button type="button" onClick={() => setCollateralToRemove(index)} className="col-span-1 text-red-500 hover:text-red-700 text-xl font-bold flex justify-center items-center">×</button>
-                <div className="col-span-1 flex items-center justify-center" title={isAdmin ? "Auto-approved for Admins" : "Approval status"}>
-                    <input type="checkbox" checked={collateral.approved} onChange={e => handleCollateralChange(index, 'approved', e.target.checked)} disabled={isAdmin} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded disabled:bg-gray-200 disabled:cursor-not-allowed" />
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Cover Image</label>
+        {imagePreview ? (
+            <div className="mt-1 relative">
+                <img src={imagePreview} alt="Itinerary preview" className="w-full h-48 object-cover rounded-md" />
+                <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-white/70 p-1 rounded-full text-red-600 hover:bg-white"
+                >
+                    <DeleteIcon className="w-5 h-5" />
+                </button>
+            </div>
+        ) : (
+            <div
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+                className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+            >
+                <div className="space-y-1 text-center">
+                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="flex text-sm text-gray-600">
+                        <label
+                            htmlFor="image-upload"
+                            className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                        >
+                            <span>Upload an image</span>
+                            <input id="image-upload" name="image-upload" type="file" className="sr-only" onChange={handleImageFileChange} accept="image/png, image/jpeg" />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                    </div>
                 </div>
             </div>
-            ))}
-            <Button type="button" variant="secondary" onClick={addCollateral} className="text-sm !py-1 !px-2 mt-2">Add Collateral</Button>
-        </div>
-
-        <div className="pt-5 flex justify-end space-x-3">
-            <button type="button" onClick={onClose} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Cancel</button>
-            <Button type="submit">{itineraryToEdit ? 'Save Changes' : 'Create Itinerary'}</Button>
-        </div>
-        </form>
-
-        {collateralToRemove !== null && (
-            <ConfirmationModal
-                isOpen={collateralToRemove !== null}
-                onClose={() => setCollateralToRemove(null)}
-                onConfirm={handleRemoveCollateralConfirm}
-                title="Remove Collateral"
-                message={`Are you sure you want to remove "${collaterals[collateralToRemove]?.name || 'this collateral'}"? This change will only be saved when you submit the form.`}
-            />
         )}
-    </>
+        <p className="mt-1 text-xs text-gray-500">
+            Recommended: 16:9 aspect ratio (e.g., 1200x675px). Formats: PNG, JPG.
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="agent" className="block text-sm font-medium text-gray-700">Assigned Agent</label>
+        <select
+          id="agent"
+          value={assignedAgentId || ''}
+          onChange={(e) => setAssignedAgentId(e.target.value || undefined)}
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+        >
+          <option value="">-- Unassigned --</option>
+          {agents.map(agent => (
+            <option key={agent.id} value={agent.id}>{agent.name}</option>
+          ))}
+        </select>
+      </div>
+
+       <div>
+        <label className="block text-sm font-medium text-gray-700">Collateral Materials</label>
+         <p className="mt-1 text-xs text-gray-500">
+            Supported formats: PDF, DOCX, PPTX, PNG, JPG, MP4.
+        </p>
+        <div className="mt-2 space-y-2">
+            {collaterals.map((collateral, index) => (
+                <div key={collateral.id} className="flex items-center gap-2 p-2 border rounded-md">
+                    <input
+                        type="text"
+                        placeholder="Collateral Name"
+                        value={collateral.name}
+                        onChange={(e) => handleCollateralChange(index, 'name', e.target.value)}
+                        className="flex-grow px-2 py-1 border border-gray-300 rounded-md text-sm"
+                    />
+                    <select
+                        value={collateral.type}
+                        onChange={(e) => handleCollateralChange(index, 'type', e.target.value as CollateralType)}
+                        className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                        {Object.values(CollateralType).map(type => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                    <label htmlFor={`collateral-upload-${index}`} className="cursor-pointer">
+                        <div className="bg-secondary hover:bg-green-600 text-white px-3 py-1.5 rounded-md shadow-sm text-sm font-medium inline-flex items-center">
+                           <FilePlusIcon className="w-5 h-5 mr-1" />
+                           <span>{collateral.url.startsWith('data:') ? 'Change' : 'Upload'}</span>
+                        </div>
+                        <input
+                            id={`collateral-upload-${index}`}
+                            type="file"
+                            className="sr-only"
+                            onChange={(e) => handleCollateralFileChange(e, index)}
+                        />
+                    </label>
+                    <button type="button" onClick={() => handleRemoveCollateral(index)} className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50">
+                        <DeleteIcon className="w-5 h-5" />
+                    </button>
+                </div>
+            ))}
+        </div>
+        <Button type="button" onClick={handleAddCollateral} variant="secondary" className="mt-2 !text-sm !py-1">
+            + Add Collateral
+        </Button>
+      </div>
+
+      <div className="pt-5 flex justify-end space-x-3">
+        <button type="button" onClick={onClose} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Cancel</button>
+        <Button type="submit">{itineraryToEdit ? 'Save Changes' : 'Create Itinerary'}</Button>
+      </div>
+    </form>
   );
 };
 
