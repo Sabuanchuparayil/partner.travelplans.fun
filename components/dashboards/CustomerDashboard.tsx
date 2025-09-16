@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
@@ -6,14 +7,10 @@ import { UploadIcon, CheckCircleIcon, EyeIcon, SparklesIcon } from '../shared/ic
 import { useData } from '../../hooks/useData';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-// FIX: Import RecommendedItinerary from the global types file.
 import { Customer, CustomerDocument, Itinerary, RecommendedItinerary } from '../../types';
-
-// FIX: Removed local definition of RecommendedItinerary as it's now in types.ts.
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
-  // FIX: Destructure getRecommendedItineraries from useData hook, which is now available.
   const { customers, bookings, itineraries, addDocumentToCustomer, updateCustomer, addBooking, getRecommendedItineraries } = useData();
   const { addToast } = useToast();
   

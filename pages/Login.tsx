@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../types';
@@ -14,7 +15,6 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // FIX: Create a ref for the form element to avoid direct DOM manipulation and fix TS error.
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
@@ -40,8 +40,7 @@ const LoginPage: React.FC = () => {
         setPassword('password123'); // Using a default password for all demo accounts
         // We need to use a timeout to allow React to update the state before submitting
         setTimeout(() => {
-            // We reference the form element directly to submit it
-            // FIX: Use the form ref to submit the form.
+            // Programmatically submit the form after state has updated
             formRef.current?.requestSubmit();
         }, 0);
     }

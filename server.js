@@ -11,18 +11,25 @@ const port = process.env.PORT || 8080;
 
 // Serve static files from the root directory
 // Set custom Content-Type for .ts and .tsx files to fix module loading error
-app.use(express.static(__dirname, {
+app.use(express.static(path.join(__dirname), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
-      res.setHeader('Content-Type', 'text/javascript');
+      res.setHeader('Content-Type', 'application/javascript');
     }
   }
 }));
 
-// For client-side routing with React Router, send index.html for any path not matching a static file.
-// This is not strictly required for HashRouter but is good practice.
+// For client-side routing with React Router, send index.html for any path
+// that doesn't look like a request for a static file.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  // If the request path has a file extension, it's likely an asset.
+  // Let it fall through to the default 404 handler of express.static.
+  // Otherwise, serve the main app file for client-side routing.
+  if (!path.extname(req.path)) {
+    res.sendFile(path.join(__dirname, 'index.html'));
+  } else {
+    res.status(404).send('File not found');
+  }
 });
 
 app.listen(port, () => {

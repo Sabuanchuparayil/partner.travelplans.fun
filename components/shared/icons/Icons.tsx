@@ -1,6 +1,5 @@
-import React from 'react';
 
-// FIX: Define a base Icon component and export all required icons as React components.
+import React from 'react';
 
 const Icon: React.FC<React.SVGProps<SVGSVGElement>> = ({ children, ...props }) => (
   <svg

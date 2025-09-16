@@ -1,5 +1,4 @@
 import React, { createContext, useState, ReactNode } from 'react';
-// FIX: Import RecommendedItinerary type.
 import { User, Itinerary, Customer, Booking, ItineraryCollateral, CustomerDocument, RecommendedItinerary } from '../types';
 import { mockUsers, mockItineraries, mockCustomers, mockBookings } from '../data/mockData';
 
@@ -29,7 +28,6 @@ interface DataContextType {
   generateCustomerSummary: (customer: Customer) => Promise<string>;
   verifyDocumentWithAi: (customerId: string, documentId: string) => Promise<void>;
   getCollateralAiFeedback: (itineraryId: string, collateralId: string) => Promise<void>;
-  // FIX: Add getRecommendedItineraries to the context type.
   getRecommendedItineraries: (customerId: string) => Promise<RecommendedItinerary[]>;
 }
 
@@ -178,7 +176,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     await updateCollateral(itineraryId, collateralId, { aiFeedback: feedback });
   };
 
-  // FIX: Implement getRecommendedItineraries function.
   const getRecommendedItineraries = async (customerId: string): Promise<RecommendedItinerary[]> => {
     await sleep(1800);
     const customer = customers.find(c => c.id === customerId);
@@ -218,7 +215,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     addCustomer, updateCustomer, addDocumentToCustomer,
     updateCollateral, deleteCollateral,
     updateBooking, addBooking,
-    // FIX: Expose getRecommendedItineraries through the context.
     generateCustomerSummary, verifyDocumentWithAi, getCollateralAiFeedback, getRecommendedItineraries
   };
 

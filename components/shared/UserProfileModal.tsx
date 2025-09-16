@@ -1,22 +1,24 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, UserRole } from '../../types';
 import Modal from './Modal';
 import { UserCircleIcon } from './icons/Icons';
 
-interface UserProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User;
-}
-
 // Define role-specific colors for better visual distinction and consistency with the Header
 const roleColors: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900 focus:ring-red-500',
   [UserRole.AGENT]: 'bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900 focus:ring-blue-500',
   [UserRole.CUSTOMER]: 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 focus:ring-green-500',
-  [UserRole.RELATIONSHIP_MANAGER]: 'bg-purple-100 text-purple-800 hover:bg-purple-200 hover:text-purple-900 focus:ring-purple-500',
+  [UserRole.RELATIONSHIP_MANAGER]: 'bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900 focus:ring-orange-500',
 };
+
+// FIX: Define the props interface for the component.
+interface UserProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  user: User;
+}
 
 const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, user }) => {
   const navigate = useNavigate();

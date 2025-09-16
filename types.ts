@@ -24,7 +24,6 @@ export interface Itinerary {
   imageUrl: string;
 }
 
-// FIX: Add RecommendedItinerary interface for AI recommendations.
 export interface RecommendedItinerary {
     itinerary: Itinerary;
     reason: string;

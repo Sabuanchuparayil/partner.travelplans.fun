@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Itinerary, UserRole, ItineraryCollateral, CollateralType } from '../../types';
 import { useData } from '../../hooks/useData';
 import Button from '../shared/Button';
-import { ImageIcon, DeleteIcon, FilePlusIcon } from '../shared/icons/Icons';
+import { ImageIcon, DeleteIcon, FilePlusIcon, SparklesIcon } from '../shared/icons/Icons';
+import { GoogleGenAI } from "@google/genai";
+import { useToast } from '../../hooks/useToast';
 
 // Helper function to convert file to Base64 data URL
 const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -29,7 +31,13 @@ const ItineraryForm: React.FC<ItineraryFormProps> = ({ onClose, onSubmit, itiner
   const [assignedAgentId, setAssignedAgentId] = useState<string | undefined>(undefined);
   const [collaterals, setCollaterals] = useState<ItineraryCollateral[]>([]);
 
+  // AI Image Generation State
+  const [imageSourceTab, setImageSourceTab] = useState<'upload' | 'ai'>('upload');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const { users } = useData();
+  const { addToast } = useToast();
   const agents = useMemo(() => users.filter(u => u.roles.includes(UserRole.AGENT)), [users]);
 
   useEffect(() => {
@@ -57,6 +65,11 @@ const ItineraryForm: React.FC<ItineraryFormProps> = ({ onClose, onSubmit, itiner
     }
   }, [itineraryToEdit]);
 
+  useEffect(() => {
+    setAiPrompt(`A scenic, high-quality, vibrant photograph of ${destination || 'this travel destination'}. No text or people.`);
+  }, [destination]);
+
+
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -83,6 +96,43 @@ const ItineraryForm: React.FC<ItineraryFormProps> = ({ onClose, onSubmit, itiner
     setImagePreview(null);
     const input = document.getElementById('image-upload') as HTMLInputElement;
     if (input) input.value = '';
+  };
+
+  const handleGenerateImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) {
+      addToast("Please enter a prompt for the image.", "error");
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateImages({
+        model: 'imagen-4.0-generate-001',
+        prompt: aiPrompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '16:9',
+        },
+      });
+
+      if (response.generatedImages?.length > 0) {
+        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
+        const dataUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
+        setImageUrl(dataUrl);
+        setImagePreview(dataUrl);
+        addToast("Image generated successfully!", "success");
+      } else {
+        throw new Error("AI failed to return an image.");
+      }
+    } catch (error) {
+      console.error("Image generation failed:", error);
+      addToast("Failed to generate image. Please try again.", "error");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleAddCollateral = () => {
@@ -173,31 +223,65 @@ const ItineraryForm: React.FC<ItineraryFormProps> = ({ onClose, onSubmit, itiner
                 <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 bg-white/70 p-1 rounded-full text-red-600 hover:bg-white"
+                    className="absolute top-2 right-2 bg-white/70 p-1 rounded-full text-red-600 hover:bg-white shadow-md"
                 >
                     <DeleteIcon className="w-5 h-5" />
                 </button>
             </div>
         ) : (
-            <div
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-                className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
-            >
-                <div className="space-y-1 text-center">
-                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                        <label
-                            htmlFor="image-upload"
-                            className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
-                        >
-                            <span>Upload an image</span>
-                            <input id="image-upload" name="image-upload" type="file" className="sr-only" onChange={handleImageFileChange} accept="image/png, image/jpeg" />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
+          <>
+            <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg my-2">
+                <button type="button" onClick={() => setImageSourceTab('upload')} className={`w-full px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${imageSourceTab === 'upload' ? 'bg-white text-primary shadow' : 'text-gray-600 hover:bg-white/70'}`}>
+                    Upload Image
+                </button>
+                <button type="button" onClick={() => setImageSourceTab('ai')} className={`w-full px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${imageSourceTab === 'ai' ? 'bg-white text-primary shadow' : 'text-gray-600 hover:bg-white/70'}`}>
+                    Generate with AI
+                </button>
+            </div>
+            
+            {imageSourceTab === 'upload' && (
+                 <div
+                    onDrop={handleDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+                >
+                    <div className="space-y-1 text-center">
+                        <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="flex text-sm text-gray-600">
+                            <label
+                                htmlFor="image-upload"
+                                className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                            >
+                                <span>Upload an image</span>
+                                <input id="image-upload" name="image-upload" type="file" className="sr-only" onChange={handleImageFileChange} accept="image/png, image/jpeg" />
+                            </label>
+                            <p className="pl-1">or drag and drop</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
+            
+            {imageSourceTab === 'ai' && (
+                <div className="mt-1 space-y-3 p-4 border-2 border-gray-300 border-dashed rounded-md">
+                    <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-700">Image Prompt</label>
+                    <textarea 
+                        id="ai-prompt" 
+                        rows={3} 
+                        value={aiPrompt} 
+                        onChange={e => setAiPrompt(e.target.value)} 
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                        placeholder="e.g., A beautiful beach in Bali with turquoise water and a sunset."
+                    />
+                    <Button type="button" onClick={handleGenerateImage} disabled={isGenerating} className="w-full inline-flex justify-center items-center gap-2">
+                        {isGenerating ? (
+                           <><svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...</>
+                        ) : (
+                           <><SparklesIcon className="w-5 h-5"/> Generate Image</>
+                        )}
+                    </Button>
+                </div>
+            )}
+        </>
         )}
         <p className="mt-1 text-xs text-gray-500">
             Recommended: 16:9 aspect ratio (e.g., 1200x675px). Formats: PNG, JPG.
