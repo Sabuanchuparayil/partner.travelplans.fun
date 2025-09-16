@@ -221,8 +221,8 @@ const ItineraryForm: React.FC<ItineraryFormProps> = ({ onClose, onSubmit, itiner
 
        <div>
         <label className="block text-sm font-medium text-gray-700">Collateral Materials</label>
-         <p className="mt-1 text-xs text-gray-500">
-            Supported formats: PDF, DOCX, PPTX, PNG, JPG, MP4.
+        <p className="mt-1 text-xs text-gray-500">
+            Supported formats: PDF, DOCX, etc.
         </p>
         <div className="mt-2 space-y-2">
             {collaterals.map((collateral, index) => (
