@@ -1,3 +1,4 @@
+
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,7 +10,14 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // Serve static files from the root directory
-app.use(express.static(__dirname));
+// Set custom Content-Type for .ts and .tsx files to fix module loading error
+app.use(express.static(__dirname, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
+      res.setHeader('Content-Type', 'text/javascript');
+    }
+  }
+}));
 
 // For client-side routing with React Router, send index.html for any path not matching a static file.
 // This is not strictly required for HashRouter but is good practice.
