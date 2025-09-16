@@ -1,0 +1,14 @@
+{
+  "name": "travelplans-fun",
+  "version": "1.0.0",
+  "description": "A scalable, secure, role-based portal for Travelplans.fun to manage itineraries, customers, and agents, with analytics and document management features.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "build": "rm -rf build && mkdir build && cp index.html index.tsx metadata.json types.ts package.json server.js firebaseConfig.ts App.tsx build/ && cp -r assets components context data hooks pages build/"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
