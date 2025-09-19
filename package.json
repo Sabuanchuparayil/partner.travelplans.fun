@@ -1,14 +1,17 @@
 {
   "name": "travelplans-fun",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A scalable, secure, role-based portal for Travelplans.fun to manage itineraries, customers, and agents, with analytics and document management features.",
   "type": "module",
+  "main": "server.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "start": "node server.js"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
