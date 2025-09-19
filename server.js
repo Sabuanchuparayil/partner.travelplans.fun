@@ -1,4 +1,3 @@
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,17 +19,15 @@ app.use(express.static(path.join(__dirname), {
 }));
 
 // For client-side routing with React Router, send index.html for any path
-// that doesn't look like a request for a static file.
-app.get('*', (req, res) => {
-  // If the request path has a file extension, it's likely an asset.
-  // Let it fall through to the default 404 handler of express.static.
-  // Otherwise, serve the main app file for client-side routing.
-  if (!path.extname(req.path)) {
+// that is not a static file.
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && !path.extname(req.path)) {
     res.sendFile(path.join(__dirname, 'index.html'));
   } else {
-    res.status(404).send('File not found');
+    next();
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
