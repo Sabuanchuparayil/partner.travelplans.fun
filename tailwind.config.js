@@ -24,12 +24,23 @@ export default {
         sans: ['Amaranth', 'sans-serif'],
       },
       colors: {
+        'primary-blue': '#3A8DDE',
+        'deep-blue': '#1F5DAA',
+        'fresh-green': '#7AC143',
+        'dark-green': '#5AA626',
+        'orange-accent': '#FBAE17',
+        'dark-slate-gray': '#2C3E50',
+        'background-neutral': '#F5F7FA',
+        white: '#FFFFFF',
         primary: '#00A9E0', // New theme blue from logo
         'primary-dark': '#0087B3',
         secondary: '#8CC63F', // New theme green from logo
         accent: '#F7941D', // New theme orange from logo
         sidebar: '#F9FAFB', // Light gray for new sidebar theme
         'sidebar-accent': '#E5E7EB', // Slightly darker for hover/active
+      },
+      boxShadow: {
+        soft: '0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.05)',
       },
       keyframes: {
         'toast-in': {

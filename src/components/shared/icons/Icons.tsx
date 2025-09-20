@@ -18,6 +18,12 @@ import {
   Edit,
   FilePlus,
   Video,
+  Code,
+  ShieldCheck,
+  Cpu,
+  Cog,
+  SlidersHorizontal,
+  Flame,
 } from 'lucide-react';
 
 export const HomeIcon = Home;
@@ -42,3 +48,9 @@ export const EditIcon = Edit;
 export const FilePlusIcon = FilePlus;
 export const VideoIcon = Video;
 export const PptFileIcon = FileIcon;
+export const CodeIcon = Code;
+export const ShieldCheckIcon = ShieldCheck;
+export const CpuChipIcon = Cpu;
+export const CogIcon = Cog;
+export const AdjustmentsHorizontalIcon = SlidersHorizontal;
+export const FireIcon = Flame;
